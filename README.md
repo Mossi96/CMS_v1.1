@@ -36,11 +36,11 @@ As a Nurse / Medical Officer / Dr you land on the Staff Dashboard. Open the
 Patients app:
 
 Search patients by first name, last name, or patient ID (prefix search type
-"s" to see everyone whose name starts with S)
-Select a patient → Open Patient to see their details and notes
+"s" to see everyone whose name starts with S).
+Select a patient and Open Patient to see their details and notes, you can also double click to open a patient.
 New Patient to create a record (DOB must be YYYY-MM-DD, Medicare must be
-10 digits)
-New notes are automatically signed with your name, role, and a timestamp
+10 digits).
+New notes are automatically signed with your name, role, and a timestamp.
 
 
 As a Dr specifically you can open a patient and you'll see an extra
@@ -57,7 +57,7 @@ bashpython -m pytest
 Notes:
 
 Data is stored in local JSON files (users.json, patients.json, notes.json,
-prescriptions.json) — they're created automatically.
+prescriptions.json), they're created automatically.
 patients.json ships with 50 sample patients so there's something to search.
 This is a portfolio project. In production, credentials would come from
 environment variables and data would live in a real database.
