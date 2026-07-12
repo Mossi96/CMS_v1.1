@@ -32,23 +32,23 @@ As Admin — create users, assign roles, delete users. Patients aren't users,
 so they don't appear here; this is staff only.
 
 
-As a Nurse / Medical Officer / Dr — you land on the Staff Dashboard. Open the
+As a Nurse / Medical Officer / Dr you land on the Staff Dashboard. Open the
 Patients app:
 
-Search patients by first name, last name, or patient ID (prefix search — type
+Search patients by first name, last name, or patient ID (prefix search type
 "s" to see everyone whose name starts with S)
 Select a patient → Open Patient to see their details and notes
 New Patient to create a record (DOB must be YYYY-MM-DD, Medicare must be
 10 digits)
-New Note — notes are automatically signed with your name, role, and a timestamp
+New notes are automatically signed with your name, role, and a timestamp
 
 
-As a Dr specifically — open a patient and you'll see an extra
+As a Dr specifically you can open a patient and you'll see an extra
 Prescriptions tab and a New Prescription button. Log in as a Nurse and
 they disappear. (The restriction is enforced in the backend too, not just hidden
 in the UI.)
 
-You can open multiple patient windows at once — they work independently.
+You can open multiple patient windows at once, they work independently.
 
 Running the tests
 
