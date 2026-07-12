@@ -8,11 +8,14 @@ medications.
 
 --- Setup ---
 
-Requirements: Python 3.10+
+Requirements: 
 
-bashpip install -r requirements.txt
+Make sure you have Python 3.10+ installed
 
-python app.py
+bashpip install -r requirements.txt - this will install the requirements.
+
+python app.py - To run the app after installing requirements.
+
 
 If pip doesn't work, try python -m pip install -r requirements.txt.
 
@@ -21,6 +24,8 @@ On Linux only, you may also need Tkinter:
 bashsudo apt install python3-tk
 
 (Windows and macOS ship with it.)
+
+
 
 --- Logging in ---
 
