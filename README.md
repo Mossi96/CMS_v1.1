@@ -1,5 +1,4 @@
-# clinic_app_v1.1
-Clinic app.
+# CMS_v1.1
 
 Clinic Management System
 
