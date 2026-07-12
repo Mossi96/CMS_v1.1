@@ -7,7 +7,7 @@ A role-based clinic desktop app (Python + CustomTkinter). Staff log in, manage
 patient records, write clinical notes, and — if they're a Doctor — prescribe
 medications.
 
-Setup
+--- Setup ---
 
 Requirements: Python 3.10+
 
@@ -22,7 +22,7 @@ bashsudo apt install python3-tk
 
 (Windows and macOS ship with it.)
 
-Logging in
+--- Logging in ---
 
 Log in as admin to create staff accounts.
 
@@ -34,7 +34,6 @@ so they don't appear here; this is staff only.
 
 As a Nurse / Medical Officer / Dr — you land on the Staff Dashboard. Open the
 Patients app:
-
 
 Search patients by first name, last name, or patient ID (prefix search — type
 "s" to see everyone whose name starts with S)
