@@ -167,7 +167,7 @@ class ClinicApp(ctk.CTk):
         
         self._clear()
         self._configure_window(460, 520)
-        self._login_bg = tk.PhotoImage(file="assets/clinic_app_bg_2.png")
+        self._login_bg = tk.PhotoImage(file="assets/clinic_app_bg_3.png")
         bg_label = tk.Label(self.container, image=self._login_bg, borderwidth=0)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1) 
         card = ctk.CTkFrame(self.container, fg_color=CARD, corner_radius=8)
