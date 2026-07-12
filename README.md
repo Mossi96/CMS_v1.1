@@ -4,7 +4,7 @@ Clinic app.
 Clinic Management System
 
 A role-based clinic desktop app (Python + CustomTkinter). Staff log in, manage
-patient records, write clinical notes, and — if they're a Doctor — prescribe
+patient records, write clinical notes, and if they're a Doctor prescribe
 medications.
 
 --- Setup ---
