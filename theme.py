@@ -53,7 +53,7 @@ THEMES = {
         "field": "#eef0f6",
         "fg": "#2d2f3a",
         "muted": "#8b8fa3",
-        "accent": "#7C6FF0",   # soft indigo
+        "accent": "#7B79E0",   # soft indigo
         "danger": "#E06C75",
         "error": "#D1495B",
     },

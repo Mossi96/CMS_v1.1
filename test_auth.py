@@ -86,24 +86,6 @@ def test_full_name_missing_parts():
     assert auth.full_name(record) == ""
 
 # --- patient IDs -----------------------------------------------------
-def test_patient_gets_id_on_creation():
-    auth.create_user("sam", "Test", "User", "pw", "Patient")
-    pid = auth.load_users()["sam"].get("id")
-    parts = (pid or "").split("-")
-    assert len(parts) == 3
-    assert all(len(p) == 3 and p.isdigit() for p in parts)
- 
- 
-def test_non_patient_has_no_id():
-    auth.create_user("nina", "Test", "User", "pw", "Nurse")
-    assert "id" not in auth.load_users()["nina"]
- 
- 
-def test_patient_ids_are_unique():
-    for i in range(20):
-        auth.create_user(f"p{i}", "Test", "User", "pw", "Patient")
-    ids = [pid for _, _, pid in auth.list_patients()]
-    assert len(ids) == len(set(ids))
  
  
 # --- authenticate ----------------------------------------------------
@@ -147,30 +129,6 @@ def test_set_role_rejects_invalid_role():
     assert ok is False
  
  
-def test_promote_to_patient_generates_id():
-    auth.create_user("nina", "Test", "User", "pw", "Nurse")
-    auth.set_role("nina", "Patient")
-    assert auth.load_users()["nina"].get("id")
- 
- 
-def test_patient_id_is_permanent_across_role_changes():
-    auth.create_user("nina", "Test", "User", "pw", "Nurse")
-    auth.set_role("nina", "Patient")
-    original = auth.load_users()["nina"]["id"]
-    auth.set_role("nina", "Nurse")      # demote
-    auth.set_role("nina", "Patient")    # re-promote
-    assert auth.load_users()["nina"]["id"] == original
- 
- 
-def test_list_users_hides_id_for_non_patients():
-    auth.create_user("nina", "Test", "User", "pw", "Nurse")
-    auth.set_role("nina", "Patient")
-    auth.set_role("nina", "Nurse")      # id stays in storage, hidden in display
-    display = {name: pid for name, _, role, pid in auth.list_users()}
-    assert display["nina"] == ""
-    assert auth.load_users()["nina"].get("id")
- 
- 
 # --- delete_user -----------------------------------------------------
 def test_delete_user_success():
     auth.create_user("nina", "Test", "User", "pw", "Nurse")
@@ -185,12 +143,6 @@ def test_delete_unknown_user_fails():
  
  
 # --- list_patients ---------------------------------------------------
-def test_list_patients_only_returns_patients():
-    auth.create_user("sam", "Test", "User", "pw", "Patient")
-    auth.create_user("nina", "Test", "User", "pw", "Nurse")
-    usernames = [username for username, _, _ in auth.list_patients()]
-    assert "sam" in usernames
-    assert "nina" not in usernames
 
 def test_display_name_resolves_full_name():
     auth.create_user("max", "Max", "Smith", "pw", "Nurse")
@@ -200,3 +152,5 @@ def test_display_name_resolves_full_name():
 def test_display_name_falls_back_for_unknown_user():
     # admin isn't in users.json, so this must not crash
     assert auth.display_name("admin") == "admin"
+
+# --- filter_patients -------------------------------------------------

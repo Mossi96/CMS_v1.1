@@ -9,6 +9,7 @@ import json
 import os
 import bcrypt
 import random
+import patients  # for generate_patient_id() and valid_dob()
 
 
 # --- Constants ------------------------------------------------------
@@ -17,8 +18,8 @@ DB_FILE = "users.json"
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "$2b$12$d4hQbmwxX2WF8TALii3XlOdvHGhWiynktCE4VxbmM4rEKmMQq68DG"
 
-VALID_ROLES = ["Patient", "Nurse", "Medical Officer", "Dr"]
-DEFAULT_ROLE = "Patient"
+VALID_ROLES = ["Nurse", "Medical Officer", "Dr"]
+DEFAULT_ROLE = "Nurse"
 
 # Role -> display colour, as hex strings this time (a window can't read
 # ANSI codes the way a terminal can). Same single-source-of-truth idea
@@ -27,16 +28,7 @@ DEFAULT_ROLE = "Patient"
 
 
 # Generate a unique patient ID in the format "123-456-789". It is random
-def generate_patient_id(users):
-    existing = {
-        u["id"] for u in users.values()
-        if isinstance(u, dict) and "id" in u
-    }
-    while True:
-        digits = f"{random.randint(0, 999_999_999):09d}"  # 9 digits, zero-padded
-        formatted = f"{digits[0:3]}-{digits[3:6]}-{digits[6:9]}"
-        if formatted not in existing:
-            return formatted
+
 
 # --- Password helpers -----------------------------------------------
 def hash_password(password):
@@ -110,18 +102,7 @@ def list_users():
     for name, data in users.items():
         record = normalize_user(data)
         role = record.get("role", DEFAULT_ROLE)
-        pid = record.get("id", "") if role == "Patient" else ""
-        result.append((name, full_name(record), role, pid))
-    return result
-
-def list_patients():
-    # Return (username, full_name, patient_id) for every Patient, for the clinical panel.
-    users = load_users()
-    result = []
-    for name, data in users.items():
-        record = normalize_user(data)
-        if record.get("role") == "Patient":
-            result.append((name, full_name(record), record.get("id", "")))
+        result.append((name, full_name(record), role))
     return result
 
 # Create and validate a user, returns (ok, message).
@@ -148,8 +129,6 @@ def create_user(username, first_name, last_name, password, role):
               "role": role,
               "first_name": first_name,
               "last_name": last_name}
-    if role == "Patient":
-        record["id"] = generate_patient_id(users)
     users[username] = record
     save_users(users)
     return (True, f"User '{username}' created as '{role}'.")
@@ -163,8 +142,6 @@ def set_role(username, role):
         return (False, f"User '{username}' not found.")
     record = normalize_user(users[username])
     record["role"] = role
-    if role == "Patient" and not record.get("id"):
-        record["id"] = generate_patient_id(users)
     users[username] = record
     save_users(users)
     return (True, f"Updated '{username}' to '{role}'.")

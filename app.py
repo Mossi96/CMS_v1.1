@@ -10,10 +10,20 @@ from tkinter import messagebox, ttk
 import auth
 import notes
 import theme
+import patients
+import prescriptions
 import customtkinter as ctk
-from datetime import datetime
- 
- 
+from datetime import datetime, date 
+# --- Constants ------------------------------------------------------
+STAFF_APPS = [
+    {
+        "label": "Patients",
+        "description": "Search patients and manage their notes",
+        "screen": "show_patient_list",
+        "roles": ["Nurse", "Medical Officer", "Dr"],
+    },
+]
+
 # --- Theme ----------------------------------------------------------
 BG = CARD = FIELD = FG = MUTED = ACCENT = DANGER = ERROR = None
 FONT = ("Segoe UI", 11)
@@ -39,10 +49,8 @@ class ClinicApp(ctk.CTk):
  
         self.current_user = None
         self.current_role = None
-        self._active_screen = None
         self._patient_window = None
 
-        self._build_chrome()
         self.container = tk.Frame(self, bg=BG)
         self.container.pack(fill="both", expand=True)
  
@@ -79,6 +87,18 @@ class ClinicApp(ctk.CTk):
         r, g, b = (int(c * factor) for c in (r, g, b))
         return f"#{r:02x}{g:02x}{b:02x}"
 
+    def _format_medicare(self, digits):
+        if len(digits) != 10:
+            return digits              # fall back to raw if it's not the expected shape
+        return f"{digits[0:4]} {digits[4:9]} {digits[9]}"
+    
+    def _format_dob(self, iso_date):
+        try:
+            d = date.fromisoformat(iso_date)
+        except (ValueError, TypeError):
+            return iso_date            # show whatever's there if it won't parse
+        return f"{d.day} {d.strftime('%b')} {d.year}" 
+    
     # --- widget builders ------------------------------------------
     
     # Build a button with the app's standard style. Returns the button widget.
@@ -97,12 +117,13 @@ class ClinicApp(ctk.CTk):
     
     # Build a labeled entry field. Returns the entry widget.
     def _field(self, parent, label, show=None):
-        tk.Label(parent, text=label, font=FONT, bg=CARD, fg=MUTED,
-                 anchor="w").pack(fill="x", pady=(8, 2))
-        entry = tk.Entry(parent, font=FONT, width=28, bg=FIELD, fg=FG,
-                         insertbackground=FG, relief="flat",
-                         show=(show or ""))
-        entry.pack(ipady=4)
+        ctk.CTkLabel(parent, text=label, font=FONT, fg_color="transparent",
+                     text_color=MUTED, anchor="w").pack(fill="x", pady=(8, 2), padx=24)
+        entry = ctk.CTkEntry(parent, font=FONT, width=240,
+                             fg_color=FIELD, text_color=FG,
+                             border_width=0, corner_radius=6,
+                             show=(show or ""))
+        entry.pack(ipady=2, padx=28)
         return entry
     
     # Build a set of radio buttons for role selection. Returns the StringVar that holds the selected value.
@@ -137,61 +158,32 @@ class ClinicApp(ctk.CTk):
         ampm = "am" if dt.hour < 12 else "pm"
         when = f"{dt.day} {dt.strftime('%b')} {dt.year}, {hour12}:{dt.minute:02d}{ampm}"
         return f"— {note['author_name']}, {note['author_role']} · {when}"
-
-    # --- chrome (theme picker) --------------------------------------
-
-    # Build the theme picker chrome at the bottom of the window.
-    def _build_chrome(self):
-        self._chrome = tk.Frame(self, bg=BG)
-        self._chrome.pack(fill="x", side="bottom")
-        self._theme_label = tk.Label(self._chrome, text="Theme:",
-                                     font=("Segoe UI", 10), bg=BG, fg=MUTED)
-        self._theme_label.pack(side="left", padx=(12, 6), pady=6)
-        self._theme_menu = ctk.CTkOptionMenu(
-            self._chrome, values=theme.names(), command=self._change_theme,
-            width=170, height=28, corner_radius=8,
-            fg_color=FIELD, button_color=FIELD,
-            button_hover_color=self._shade(FIELD), text_color=FG,
-            font=("Segoe UI", 10))
-        self._theme_menu.set(theme.current_name())
-        self._theme_menu.pack(side="left", pady=6)
-
-    # Switch the active theme and refresh the UI to apply it.
-    def _change_theme(self, name):
-        theme.apply(name)
-        _load_theme()
-        ctk.set_appearance_mode(theme.get()["mode"])
-        self.configure(bg=BG)
-        self.container.configure(bg=BG)
-        self._chrome.configure(bg=BG)
-        self._theme_label.configure(bg=BG, fg=MUTED)
-        self._theme_menu.configure(fg_color=FIELD, button_color=FIELD,
-                                   button_hover_color=self._shade(FIELD),
-                                   text_color=FG)
-        if self._active_screen:  # refresh the current screen to apply new colours
-            self._active_screen()
+     
 
     # --- login ------------------------------------------------------
 
     # Show the login screen.
     def show_login(self):
-        self._active_screen = self.show_login
+        
         self._clear()
-        self._configure_window(460, 560) 
-        card = tk.Frame(self.container, bg=CARD, padx=32, pady=28)
+        self._configure_window(460, 520)
+        self._login_bg = tk.PhotoImage(file="assets/clinic_app_bg_2.png")
+        bg_label = tk.Label(self.container, image=self._login_bg, borderwidth=0)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1) 
+        card = ctk.CTkFrame(self.container, fg_color=CARD, corner_radius=8)
         card.place(relx=0.5, rely=0.5, anchor="center")
  
-        tk.Label(card, text="Clinic Login", font=TITLE_FONT,
-                 bg=CARD, fg=ACCENT).pack(pady=(0, 12))
+        ctk.CTkLabel(card, text="Clinic Login", font=TITLE_FONT,
+                 text_color=ACCENT, fg_color="transparent").pack(pady=(28, 12))
  
         self.username_entry = self._field(card, "Username")
         self.password_entry = self._field(card, "Password", show="*")
  
-        self.status_label = tk.Label(card, text="", font=("Segoe UI", 10),
-                                     bg=CARD, fg=ERROR)
+        self.status_label = ctk.CTkLabel(card, text="", font=("Segoe UI", 10),
+                                     fg_color=CARD, text_color=ERROR)
         self.status_label.pack(pady=(8, 8))
  
-        self._button(card, "Log In", self.attempt_login).pack()
+        self._button(card, "Log In", self.attempt_login).pack(pady=(0, 28))
  
         self.username_entry.focus_set()
         self.username_entry.bind("<Return>", lambda e: self.attempt_login())
@@ -202,7 +194,7 @@ class ClinicApp(ctk.CTk):
         result = auth.authenticate(self.username_entry.get(),
                                    self.password_entry.get())
         if result is None:
-            self.status_label.config(text="Invalid username or password.")
+            self.status_label.configure(text="Invalid username or password.")
             self.password_entry.delete(0, tk.END)
             return
         self.current_user, self.current_role = result
@@ -219,13 +211,13 @@ class ClinicApp(ctk.CTk):
         if self.current_role == "Admin":
             self.show_admin_panel()
         elif self.current_role in ("Nurse", "Medical Officer", "Dr"):
-            self.show_patient_list()
+            self.show_staff_dashboard()
         else:  # Patient
             self.show_role_placeholder()
  
     def show_role_placeholder(self):
         # Temporary -- the Dr/Nurse/MO/Patient panels come next.
-        self._active_screen = self.show_role_placeholder
+        
         self._clear()
         self._configure_window(900, 650, resizable=True) 
         wrap = tk.Frame(self.container, bg=BG)
@@ -240,15 +232,62 @@ class ClinicApp(ctk.CTk):
         self._button(wrap, "Log Out", self.logout, bg=FIELD, fg=FG,
                      width=16).pack()
     
+    # Build a tile for an app in the staff dashboard. Each tile has a label, description, and an "Open" button that launches the app's screen.
+    def _build_app_tile(self, parent, app):
+        tile = tk.Frame(parent, bg=CARD, padx=20, pady=16)
+        tile.pack(fill="x", pady=6)
+
+        tk.Label(tile, text=app["label"], font=("Segoe UI Semibold", 14),
+                 bg=CARD, fg=FG, anchor="w").pack(fill="x")
+        tk.Label(tile, text=app["description"], font=("Segoe UI", 10),
+                 bg=CARD, fg=MUTED, anchor="w").pack(fill="x", pady=(2, 10))
+
+        # turn the method-name string into the actual method, and launch it
+        launch = getattr(self, app["screen"])
+        self._button(tile, "Open", launch, width=10).pack(anchor="w")
+
+    # ----- Staff Dashboard ------------------------------------------------
+    def show_staff_dashboard(self):
+        
+        self._clear()
+        self._configure_window(700, 600)
+
+        self._dashboard_bg = tk.PhotoImage(file="assets/clinic_app_bg_med_1.png")
+        bg_label = tk.Label(self.container, image=self._dashboard_bg, borderwidth=0)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        frame = ctk.CTkFrame(self.container, fg_color=CARD, corner_radius=12, width=560, height=380)
+        frame.place(relx=0.5, rely=0.5, anchor="center")
+        frame.pack_propagate(False)  # prevent the frame from resizing to fit its contents
+
+        # header
+        ctk.CTkLabel(frame, text="STAFF DASHBOARD", font=TITLE_FONT,
+                     fg_color="transparent", text_color=FG).pack(pady=(28, 2))
+        ctk.CTkLabel(frame,
+                     text=f"Signed in as {auth.display_name(self.current_user)} ({self.current_role})",
+                     font=("Segoe UI", 10), fg_color="transparent",
+                     text_color=MUTED).pack(pady=(0, 24))
+
+        # one tile per app this role can access
+        for app in STAFF_APPS:
+            if self.current_role not in app["roles"]:
+                continue          # gated out — don't render it
+            self._build_app_tile(frame, app)
+
+        # Log Out lives here now — the hub, not each app
+        self._button(frame, "Log Out", self.logout, bg=FIELD, fg=FG,
+                     width=16).pack(pady=(24, 28), padx=4)
 
      # --- clinical: patient list ------------------------------------
     def show_patient_list(self):
-        self._active_screen = self.show_patient_list
-        self._clear()
-        self._configure_window(900, 650, resizable=True)
-        frame = tk.Frame(self.container, bg=BG, padx=24, pady=20)
+        win = ctk.CTkToplevel(self)
+        win.title("Patients")
+        win.configure(fg_color=BG)
+        win.geometry(self._center_geometry(900, 650))
+        win.transient(self)     # keep it above the main window
+        win.protocol("WM_DELETE_WINDOW", lambda: win.destroy())
+        frame = tk.Frame(win, bg=BG, padx=24, pady=20)
         frame.pack(fill="both", expand=True)
-
         tk.Label(frame, text="PATIENTS", font=TITLE_FONT, bg=BG,
                  fg=FG).pack(pady=(0, 2))
         tk.Label(frame,
@@ -259,95 +298,306 @@ class ClinicApp(ctk.CTk):
                  font=FONT, bg=BG, fg=MUTED, anchor="w").pack(fill="x")
 
         self._ensure_tree_style()
+        win.search_criterion = tk.StringVar(value="all")
+        
+        search_row = tk.Frame(frame, bg=BG)
+        search_row.pack(fill="x", pady=(0, 8))
+        
+        tk.Label(search_row, text="Search:", font=FONT, bg=BG,
+                 fg=MUTED).pack(side="left", padx=(0, 6))
+
+        win.search_entry = tk.Entry(search_row, font=FONT, bg=FIELD, fg=FG,
+                                     insertbackground=FG, relief="flat", width=24)
+        win.search_entry.pack(side="left", ipady=3, padx=(0, 12))
+        win.search_entry.bind("<KeyRelease>", lambda e: self._on_search(win))
+        for label, value in (("All", "all"), ("First", "first"),
+                             ("Last", "last"), ("ID", "id")):
+            tk.Radiobutton(search_row, text=label, value=value,
+                           variable=win.search_criterion,
+                           font=FONT, bg=BG, fg=FG, selectcolor=FIELD,
+                           activebackground=BG, activeforeground=FG,
+                           command=lambda: self._on_search(win)).pack(side="left")
+
         list_wrap = tk.Frame(frame, bg=BG)
         list_wrap.pack(fill="both", expand=True, pady=(4, 12))
         scroll = tk.Scrollbar(list_wrap)
         scroll.pack(side="right", fill="y")
-        self.patient_tree = ttk.Treeview(
+        
+        win.patient_tree = ttk.Treeview(
             list_wrap, style="Clinic.Treeview",
-            columns=("name", "id"), show="headings",
+            columns=("name", "id", "dob", "address"), show="headings",
             yscrollcommand=scroll.set)
-        self.patient_tree.heading("name", text="Name", anchor="w")
-        self.patient_tree.column("name", width=220, anchor="w")
-        self.patient_tree.heading("id", text="Patient ID", anchor="center")
-        self.patient_tree.column("id", width=160, anchor="center")
-        self.patient_tree.tag_configure("Patient",
+        win.patient_tree.heading("name", text="Name", anchor="w")
+        win.patient_tree.column("name", width=220, anchor="w")
+        win.patient_tree.heading("id", text="Patient ID", anchor="center")
+        win.patient_tree.column("id", width=160, anchor="center")
+        win.patient_tree.heading("dob", text="Date of Birth", anchor="center")
+        win.patient_tree.column("dob", width=110, anchor="center")
+        win.patient_tree.heading("address", text="Address", anchor="w")
+        win.patient_tree.column("address", width=220, anchor="w")
+        
+        win.patient_tree.tag_configure("Patient",
                                         foreground=FG)
-        self.patient_tree.pack(side="left", fill="both", expand=True)
-        scroll.config(command=self.patient_tree.yview)
+        win.patient_tree.pack(side="left", fill="both", expand=True)
+        scroll.config(command=win.patient_tree.yview)
 
-        for name, display_name, pid in auth.list_patients():
-            self.patient_tree.insert("", tk.END, iid=name,
-                                     values=(display_name, pid), tags=("Patient",))
-        self.patient_tree.bind("<Double-1>",
-                               lambda e: self._open_selected_patient())
+        self._populate_patient_tree(win, patients.list_patients())
+        win.patient_tree.bind("<Double-1>",
+                               lambda e: self._open_selected_patient(win))
+        win.patient_tree.bind("<<TreeviewSelect>>",
+                              lambda e: win.patient_status.config(text=""))
 
         row = tk.Frame(frame, bg=BG)
         row.pack(fill="x")
-        self._button(row, "Open Patient", self._open_selected_patient,
-                     width=14).pack(side="left")
-        self.patient_status = tk.Label(row, text="", font=("Segoe UI", 10),
-                                       bg=BG, fg=ERROR)
-        self.patient_status.pack(side="left", padx=12)
-        self._button(frame, "Log Out", self.logout, bg=FIELD, fg=FG,
-                     width=16).pack(pady=(12, 0))
+        
+        open_col = tk.Frame(row, bg=BG)
+        open_col.pack(side="left")
+        self._button(open_col, "Open Patient",
+                     lambda: self._open_selected_patient(win),
+                     width=14).pack()
+        win.patient_status = tk.Label(open_col, text="", font=("Segoe UI", 10),
+                                      bg=BG, fg=ERROR)
+        win.patient_status.pack(pady=(4, 0))
+
+        self._button(row, "New Patient",
+                     lambda: self.show_create_patient(win),
+                     width=14).pack(side="left", padx=8, anchor="n")
+
+        self._button(frame, "Close", win.destroy, bg=FIELD, fg=FG,
+                     width=12).pack(pady=(12, 0))
+
+    # Populate the patient tree with a list of patients.
+    def _populate_patient_tree(self, win, patient_list):
+        for item in win.patient_tree.get_children():
+            win.patient_tree.delete(item)
+        for pid, first, last, dob, address in patient_list:
+            display_name = f"{first} {last}".strip()
+            win.patient_tree.insert("", tk.END, iid=pid,
+                                     values=(display_name, pid, dob, address), tags=("Patient",))
+    
+    # Handle search input changes by filtering the patient list and updating the treeview.
+    def _on_search(self, win):
+        query = win.search_entry.get()
+        criterion = win.search_criterion.get()
+        filtered = patients.filter_patients(patients.list_patients(), query, criterion)
+        self._populate_patient_tree(win, filtered)
 
     # Open the selected patient in a new window. 
     # If no patient is selected, show an error message.
-    def _open_selected_patient(self):
-        selection = self.patient_tree.selection()
+    def _open_selected_patient(self, win):
+        selection = win.patient_tree.selection()
         if not selection:
-            self.patient_status.config(text="Select a patient first.")
+            win.patient_status.config(text="Select a patient first.")
             return
-        name, pid = self.patient_tree.item(selection[0], "values")
-        self.show_patient_view(pid, name)
+        pid = selection[0]                                    # the iid IS the patient ID
+        name = win.patient_tree.item(pid, "values")[0]        # name is the first column
+        self.show_patient_view(win, pid, name)
 
     # --- clinical: patient view (notes) ----------------------------
-    def show_patient_view(self, patient_id, patient_name):
-        self._close_patient_window()
- 
+    def show_patient_view(self, owner, patient_id, patient_name):
+        existing_win = getattr(owner, "_patient_window", None)
+        if existing_win is not None:
+            try:
+                existing_win.destroy()
+            except tk.TclError:
+                pass
         win = ctk.CTkToplevel(self)
-        self._patient_window = win
+        win.after(10, win.lift)
+        win.after(10, win.focus_force)
+        owner._patient_window = win
+        win._owner = owner
         win.title(f"{patient_name}    {patient_id}")
         win.configure(fg_color=BG)
-        win.geometry(self._center_geometry(640, 720))
+        win.geometry(self._center_geometry(700, 860))
         win.transient(self)     # keep it above the main window
-        win.protocol("WM_DELETE_WINDOW", self._close_patient_window)
- 
+        win.protocol("WM_DELETE_WINDOW", lambda: self._close_patient_window(owner))
+
         # a body frame we can clear/rebuild to swap notes view <-> new note
         win._body = tk.Frame(win, bg=BG)
         win._body.pack(fill="both", expand=True)
         self._render_patient_notes(win, patient_id, patient_name)
 
     # Close the patient view window if it's open.
-    def _close_patient_window(self):
-        win = getattr(self, "_patient_window", None)
+    def _close_patient_window(self, owner):
+        win = getattr(owner, "_patient_window", None)
         if win is not None:
             try:
                 win.destroy()
             except tk.TclError:
                 pass
-            self._patient_window = None
+            owner._patient_window = None
     
+    def show_create_patient(self, owner):
+        win = ctk.CTkToplevel(self)
+        win.title("New Patient")
+        win.configure(fg_color=BG)
+        win.geometry(self._center_geometry(460, 620))
+        win.transient(owner)          # float over the list window that opened it
+        win.lift()
+        win.focus_force()
+
+        card = tk.Frame(win, bg=CARD, padx=32, pady=24)
+        card.place(relx=0.5, rely=0.5, anchor="center")
+
+        tk.Label(card, text="New Patient", font=TITLE_FONT,
+                 bg=CARD, fg=FG).pack(pady=(0, 16))
+        
+        first = self._field(card, "First Name")
+        last = self._field(card, "Last Name")
+        dob = self._field(card, "Date of Birth (YYYY-MM-DD)")
+        address = self._field(card, "Address")
+        medicare = self._field(card, "Medicare Number (10 digits)")
+
+        status = tk.Label(card, text="", font=("Segoe UI", 10),
+                          bg=CARD, fg=ERROR)
+        status.pack(pady=(8, 8))
+
+        def submit():
+            ok, msg = patients.create_patient(
+                first.get(), last.get(), dob.get(),
+                address.get(), medicare.get())
+            if ok:
+                self._populate_patient_tree(owner, patients.list_patients())
+                win.destroy()
+            else:
+                status.config(text=msg)
+        buttons = tk.Frame(card, bg=CARD)
+        buttons.pack(pady=(8, 0))
+        self._button(buttons, "Create", submit, width=11).pack(side="left", padx=4)
+        self._button(buttons, "Cancel", win.destroy, bg=FIELD, fg=FG,
+                     width=11).pack(side="left", padx=4)
+        first.focus_set()
+
     # --- clinical: new note ----------------------------------------
     # Render the new note form in the patient view window.
-    def _render_patient_notes(self, win, patient_id, patient_name):
+
+    def _format_prescription(self, rx):
+        duration = f"{rx['duration_amount']} {rx['duration_unit']}"
+        line = (f"{rx['medication']} — {rx['dosage']}, "
+                f"{rx['frequency']} for {duration}")
+        if rx.get("instructions"):
+            line += f"\n{rx['instructions']}"
+        return line
+
+    def _format_rx_signature(self, rx):
+        dt = datetime.fromisoformat(rx["created_at"])
+        hour12 = dt.hour % 12 or 12
+        ampm = "am" if dt.hour < 12 else "pm"
+        when = f"{dt.day} {dt.strftime('%b')} {dt.year}, {hour12}:{dt.minute:02d}{ampm}"
+        return f"— {rx['prescriber_name']}, {rx['prescriber_role']} · {when}"
+
+    def _render_prescriptions_section(self, parent, win, patient_id, patient_name):
+        for w in parent.winfo_children():
+            w.destroy()
+
+        rx_wrap = tk.Frame(parent, bg=CARD)
+        rx_wrap.pack(fill="both", expand=True)
+        scroll = tk.Scrollbar(rx_wrap)
+        scroll.pack(side="right", fill="y")
+        rx_text = tk.Text(rx_wrap, bg=CARD, fg=FG, font=FONT,
+                          relief="flat", wrap="word", padx=16, pady=12,
+                          highlightthickness=0, yscrollcommand=scroll.set)
+        rx_text.pack(side="left", fill="both", expand=True)
+        scroll.config(command=rx_text.yview)
+        rx_text.tag_configure("sig", foreground=MUTED,
+                              font=("Segoe UI", 9, "italic"))
+        rx_text.tag_configure("spacer", font=("Segoe UI", 4))
+
+        rx_list = prescriptions.get_prescriptions(patient_id)
+        if not rx_list:
+            rx_text.insert("end", "No prescriptions yet.", "sig")
+        else:
+            for rx in rx_list:
+                rx_text.insert("end", self._format_prescription(rx) + "\n")
+                rx_text.insert("end", self._format_rx_signature(rx) + "\n", "sig")
+                rx_text.insert("end", "\n", "spacer")
+        rx_text.config(state="disabled")
+
+    def _render_new_prescription(self, win, patient_id, patient_name):
         for w in win._body.winfo_children():
             w.destroy()
         frame = tk.Frame(win._body, bg=BG, padx=24, pady=20)
         frame.pack(fill="both", expand=True)
- 
-        header = tk.Frame(frame, bg=BG)
-        header.pack(fill="x")
-        tk.Label(header, text=patient_name, font=TITLE_FONT, bg=BG,
-                 fg=FG).pack(side="left")
-        tk.Label(header, text=f"   {patient_id}", font=FONT, bg=BG,
-                 fg=MUTED).pack(side="left")
- 
-        tk.Label(frame, text="Notes", font=FONT, bg=BG, fg=MUTED,
-                 anchor="w").pack(fill="x", pady=(16, 4))
- 
-        notes_wrap = tk.Frame(frame, bg=CARD)
+
+        tk.Label(frame, text="New Prescription", font=TITLE_FONT,
+                 bg=BG, fg=FG).pack(pady=(0, 2))
+        tk.Label(frame, text=f"{patient_name}   {patient_id}",
+                 font=("Segoe UI", 10), bg=BG, fg=MUTED).pack(pady=(0, 16))
+        
+        card = tk.Frame(frame, bg=CARD, padx=24, pady=16)
+        card.pack(fill="x")
+
+        medication = self._field(card, "Medication")
+        dosage = self._field(card, "Dosage (e.g. 500mg)")
+
+        tk.Label(card, text="Frequency", font=FONT, bg=CARD, fg=MUTED,
+                 anchor="w").pack(fill="x", pady=(8, 2), padx=24)
+        frequency = ctk.CTkOptionMenu(card,
+                                      values=prescriptions.VALID_FREQUENCIES,
+                                      fg_color=FIELD, button_color=FIELD,
+                                      text_color=FG, width=240)
+        frequency.set(prescriptions.VALID_FREQUENCIES[0])
+        frequency.pack(padx=28, pady=(0, 4))
+
+        tk.Label(card, text="Duration", font=FONT, bg=CARD, fg=MUTED,
+                 anchor="w").pack(fill="x", pady=(8, 2), padx=24)
+        dur_row = tk.Frame(card, bg=CARD)
+        dur_row.pack(fill="x", padx=28)
+
+        duration_amount = ctk.CTkEntry(dur_row, width=70, fg_color=FIELD,
+                                       text_color=FG, border_width=0)
+        duration_amount.pack(side="left")
+
+        duration_unit = ctk.CTkOptionMenu(dur_row,
+                                          values=prescriptions.VALID_DURATION_UNITS,
+                                          fg_color=FIELD, button_color=FIELD,
+                                          text_color=FG, width=110)
+        duration_unit.set(prescriptions.VALID_DURATION_UNITS[0])
+        duration_unit.pack(side="left", padx=(8, 0))
+
+        tk.Label(card, text="Instructions (optional)", font=FONT, bg=CARD,
+                 fg=MUTED, anchor="w").pack(fill="x", pady=(12, 2), padx=24)
+        instructions = tk.Text(card, bg=FIELD, fg=FG, insertbackground=FG,
+                               font=FONT, relief="flat", wrap="word",
+                               height=4, padx=10, pady=8, highlightthickness=0)
+        instructions.pack(fill="x", padx=28, pady=(0, 8))
+
+
+        status = tk.Label(frame, text="", font=("Segoe UI", 10),
+                          bg=BG, fg=ERROR)
+        status.pack(pady=(8, 4))
+
+        def submit():
+            ok, msg = prescriptions.add_prescription(
+                patient_id,
+                medication.get(),
+                dosage.get(),
+                frequency.get(),
+                duration_amount.get(),
+                duration_unit.get(),
+                instructions.get("1.0", "end").strip(),
+                auth.display_name(self.current_user),
+                self.current_role)
+            if ok:
+                self._render_patient_notes(win, patient_id, patient_name)
+            else:
+                status.config(text=msg)
+
+        buttons = tk.Frame(frame, bg=BG)
+        buttons.pack(pady=(4, 0))
+        self._button(buttons, "Prescribe", submit, width=12).pack(side="left", padx=4)
+        self._button(buttons, "Cancel",
+                     lambda: self._render_patient_notes(win, patient_id, patient_name),
+                     bg=FIELD, fg=FG, width=12).pack(side="left", padx=4)
+        medication.focus_set()
+
+
+    def _render_notes_section(self, parent, win, patient_id, patient_name):
+        # clear whatever was in this parent
+        for w in parent.winfo_children():
+            w.destroy()
+
+        notes_wrap = tk.Frame(parent, bg=CARD)
         notes_wrap.pack(fill="both", expand=True)
         scroll = tk.Scrollbar(notes_wrap)
         scroll.pack(side="right", fill="y")
@@ -359,7 +609,7 @@ class ClinicApp(ctk.CTk):
         notes_text.tag_configure("sig", foreground=MUTED,
                                  font=("Segoe UI", 9, "italic"))
         notes_text.tag_configure("spacer", font=("Segoe UI", 4))
- 
+
         patient_notes = notes.get_notes(patient_id)
         if not patient_notes:
             notes_text.insert("end", "No notes yet.", "sig")
@@ -368,15 +618,78 @@ class ClinicApp(ctk.CTk):
                 notes_text.insert("end", n["text"] + "\n")
                 notes_text.insert("end", self._format_signature(n) + "\n", "sig")
                 notes_text.insert("end", "\n", "spacer")
-        notes_text.config(state="disabled")   # read-only
+        notes_text.config(state="disabled")
+
+        # the New Note button belongs with the notes, so it goes here too
+
+    def _render_patient_notes(self, win, patient_id, patient_name):
+        for w in win._body.winfo_children():
+            w.destroy()
+        frame = tk.Frame(win._body, bg=BG, padx=24, pady=20)
+        frame.pack(fill="both", expand=True)
+        
+        record = patients.get_patient(patient_id)
+        if record is None:
+            record = {}
+  
+        header = tk.Frame(frame, bg=BG)
+        header.pack(fill="x")
+
+        tk.Label(header, text=patient_name, font=TITLE_FONT, bg=BG,
+                 fg=FG).pack(side="left")
+        tk.Label(header, text=f"   {patient_id}", font=FONT, bg=BG,
+                 fg=MUTED).pack(side="left")
+
+        details = tk.Frame(frame, bg=CARD, padx=20, pady=14)
+        details.pack(fill="x", pady=(12, 0))
+
+        fields = [
+            ("Patient ID",  patient_id),
+            ("Date of Birth", self._format_dob(record.get("dob", ""))),
+            ("Medicare",    self._format_medicare(record.get("medicare", ""))),
+            ("Address",     record.get("address", "")),
+        ]
+
+        for i, (label, value) in enumerate(fields):
+            tk.Label(details, text=label, font=("Segoe UI", 9),
+                     bg=CARD, fg=MUTED, anchor="w").grid(row=i, column=0,
+                                                          sticky="w", pady=2)
+            tk.Label(details, text=value or "—", font=FONT,
+                     bg=CARD, fg=FG, anchor="w").grid(row=i, column=1,
+                                                       sticky="w", padx=(16, 0), pady=2)
+
+        
+        tabs = ctk.CTkTabview(
+            frame, anchor="nw",
+            fg_color=CARD,                              # the tab CONTENT area
+            segmented_button_fg_color=FIELD,            # the tab bar background
+            segmented_button_selected_color=ACCENT,     # active tab
+            segmented_button_selected_hover_color=self._shade(ACCENT),
+            segmented_button_unselected_color=FIELD,    # inactive tab
+            segmented_button_unselected_hover_color=self._shade(FIELD),
+            text_color=FG,                              # tab label text
+        )
+        tabs.pack(fill="both", expand=True, pady=(0, 0))
+        tabs.add("Notes")
+
+        if self.current_role == "Dr":
+            tabs.add("Prescriptions")
+            self._render_prescriptions_section(tabs.tab("Prescriptions"),
+                                               win, patient_id, patient_name)
+
+        self._render_notes_section(tabs.tab("Notes"), win, patient_id, patient_name)
  
         row = tk.Frame(frame, bg=BG)
-        row.pack(fill="x", pady=(12, 0))
+        row.pack(fill="x", pady=(24, 0))
         self._button(row, "New Note",
                      lambda: self._render_new_note(win, patient_id, patient_name),
                      width=12).pack(side="left")
-        self._button(row, "Close", self._close_patient_window, bg=FIELD, fg=FG,
-                     width=10).pack(side="right")
+        if self.current_role == "Dr":
+            self._button(row, "New Prescription",
+                         lambda: self._render_new_prescription(win, patient_id, patient_name),
+                         width=16).pack(side="left", padx=8)
+        self._button(row, "Close", win.destroy, bg=FIELD, fg=FG,
+                     width=12).pack(side="right")
 
     # Create a new note for the patient. This is a separate screen in the patient window.
     def _render_new_note(self, win, patient_id, patient_name):
@@ -423,7 +736,7 @@ class ClinicApp(ctk.CTk):
 
     # --- admin panel -----------------------------------------------
     def show_admin_panel(self):
-        self._active_screen = self.show_admin_panel
+        
         self._clear()
         self._configure_window(680, 680) 
         
@@ -454,8 +767,6 @@ class ClinicApp(ctk.CTk):
                                  ("role", "Role", 130)):
             self.user_tree.heading(col, text=text, anchor="w")
             self.user_tree.column(col, width=width, anchor="w")
-        self.user_tree.heading("id", text="Patient ID", anchor="center")
-        self.user_tree.column("id", width=120, anchor="center")
         self.user_tree.pack(side="left", fill="both", expand=True)
         scroll.config(command=self.user_tree.yview)
 
@@ -485,9 +796,9 @@ class ClinicApp(ctk.CTk):
     def _refresh_user_list(self):
         for item in self.user_tree.get_children():
             self.user_tree.delete(item)
-        for username, full_name, role, pid in auth.list_users():
+        for username, full_name, role in auth.list_users():
             self.user_tree.insert("", tk.END, iid=username,
-                                  values=(username, full_name, role, pid), tags=(role,))
+                                  values=(username, full_name, role), tags=(role,))
     
     # Get the username of the currently selected user in the admin panel's treeview, or None if no user is selected.
     def _selected_username(self):
@@ -517,7 +828,7 @@ class ClinicApp(ctk.CTk):
  
     # --- create user form ------------------------------------------
     def show_create_user(self):
-        self._active_screen = self.show_create_user
+        
         self._clear()
         self._configure_window(560, 700)
         card = tk.Frame(self.container, bg=CARD, padx=32, pady=24)
@@ -563,7 +874,7 @@ class ClinicApp(ctk.CTk):
  
     # --- assign role form ------------------------------------------
     def show_assign_role(self, username):
-        self._active_screen = lambda: self.show_assign_role(username)
+        
         self._clear()
         card = tk.Frame(self.container, bg=CARD, padx=32, pady=24)
         card.place(relx=0.5, rely=0.5, anchor="center")
@@ -573,7 +884,7 @@ class ClinicApp(ctk.CTk):
         tk.Label(card, text=username, font=("Segoe UI Semibold", 13),
                  bg=CARD, fg=FG).pack(pady=(0, 16))
  
-        current = next((role for name, _, role, _ in auth.list_users()
+        current = next((role for name, _, role in auth.list_users()
                         if name == username), auth.DEFAULT_ROLE)
         role_var = self._role_radios(card, current)
  
