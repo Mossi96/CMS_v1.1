@@ -28,7 +28,7 @@ Log in as admin to create staff accounts.
 
 What to try
 
-As Admin — create users, assign roles, delete users. Patients aren't users,
+As Admin you can create users, assign roles, delete users. Patients aren't users,
 so they don't appear here; this is staff only.
 
 
