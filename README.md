@@ -11,6 +11,7 @@ medications.
 Requirements: Python 3.10+
 
 bashpip install -r requirements.txt
+
 python app.py
 
 If pip doesn't work, try python -m pip install -r requirements.txt.
