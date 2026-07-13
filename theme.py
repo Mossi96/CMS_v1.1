@@ -1,14 +1,5 @@
 # Theme registry for the clinic app.
 
-# A theme is a set of colour tokens plus a light/dark mode flag. Every colour in
-# the GUI comes from the active theme, so switching themes recolours the whole
-# application at once.
-
-# To add a new theme: copy any entry in THEMES, rename it, and change the values.
-# It must have the same keys as the others (bg, card, field, fg, muted, accent,
-# danger, error, mode, and a roles dict). Nothing else needs to change --
-# it will appear in the theme picker automatically.
-
 THEMES = {
     "Slate Dark": {
         "mode": "dark",
@@ -24,12 +15,12 @@ THEMES = {
 
     "Clinical Light": {
         "mode": "light",
-        "bg": "#eef1f5",       # soft grey-blue, so white cards stand out
-        "card": "#ffffff",     # white panels
-        "field": "#e8ecf2",    # subtly inset input fields
-        "fg": "#1f2933",        # dark slate text (softer than pure black)
-        "muted": "#6b7280",    # grey secondary text
-        "accent": "#2563EB",   # confident medical blue
+        "bg": "#eef1f5",       
+        "card": "#ffffff",     
+        "field": "#e8ecf2",    
+        "fg": "#1f2933",        
+        "muted": "#6b7280",    
+        "accent": "#2563EB",   
         "danger": "#D64545",
         "error": "#C0392B",
     },
@@ -53,7 +44,7 @@ THEMES = {
         "field": "#eef0f6",
         "fg": "#2d2f3a",
         "muted": "#8b8fa3",
-        "accent": "#7B79E0",   # soft indigo
+        "accent": "#7B79E0",   
         "danger": "#E06C75",
         "error": "#D1495B",
     },

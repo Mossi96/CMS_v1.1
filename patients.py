@@ -5,6 +5,7 @@ from datetime import date
 
 PATIENTS_FILE = "patients.json"
 
+# load_patients() and save_patients() are the only two functions that touch the JSON file.
 def load_patients():
     if not os.path.exists(PATIENTS_FILE):
         return {}
@@ -14,11 +15,13 @@ def load_patients():
     except json.JSONDecodeError:
         return {}
 
-
 def save_patients(patients):
     with open(PATIENTS_FILE, "w") as f:
         json.dump(patients, f, indent=4)
 
+# --- Patient record validation and creation ---------------------------------
+
+# Validate dob and medicare number formats, generate a unique patient ID, and create a new patient record.
 def valid_dob(value):
     try:
         dob = date.fromisoformat(value)
@@ -86,6 +89,7 @@ def list_patients():
         ))
     return result
 
+# Filter a list of patients by a search query and criterion (first name, last name, ID, or all).
 def filter_patients(patient_list, query, criterion="all"):
     query = query.strip().lower()
     if not query:

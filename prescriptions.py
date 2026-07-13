@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 import os
 
-
+# Constants for prescription validation
 VALID_FREQUENCIES = [
     "Once daily",
     "Twice daily",
@@ -38,7 +38,7 @@ def save_prescriptions(prescriptions):
 def add_prescription(patient_id, medication, dosage, frequency,
                      duration_amount, duration_unit, instructions,
                      prescriber_name, prescriber_role):
-    # --- authorization: the real gate, not the hidden UI ---
+    
     if prescriber_role != PRESCRIBER_ROLE:
         return (False, "Only a Doctor can create a prescription.")
 

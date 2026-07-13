@@ -214,9 +214,9 @@ class ClinicApp(ctk.CTk):
             self.show_staff_dashboard()
         else:  # Patient
             self.show_role_placeholder()
- 
+
+    # Temporary placeholder for roles that don't have a dashboard yet.
     def show_role_placeholder(self):
-        # Temporary -- the Dr/Nurse/MO/Patient panels come next.
         
         self._clear()
         self._configure_window(900, 650, resizable=True) 
@@ -389,8 +389,8 @@ class ClinicApp(ctk.CTk):
         if not selection:
             win.patient_status.config(text="Select a patient first.")
             return
-        pid = selection[0]                                    # the iid IS the patient ID
-        name = win.patient_tree.item(pid, "values")[0]        # name is the first column
+        pid = selection[0]                                    
+        name = win.patient_tree.item(pid, "values")[0]        
         self.show_patient_view(win, pid, name)
 
     # --- clinical: patient view (notes) ----------------------------
@@ -432,7 +432,7 @@ class ClinicApp(ctk.CTk):
         win.title("New Patient")
         win.configure(fg_color=BG)
         win.geometry(self._center_geometry(460, 620))
-        win.transient(owner)          # float over the list window that opened it
+        win.transient(owner)         
         win.lift()
         win.focus_force()
 
@@ -468,9 +468,9 @@ class ClinicApp(ctk.CTk):
                      width=11).pack(side="left", padx=4)
         first.focus_set()
 
-    # --- clinical: new note ----------------------------------------
-    # Render the new note form in the patient view window.
+    # --- clinical: prescriptions ------------------------------------
 
+    # Format a prescription for display in the notes section.
     def _format_prescription(self, rx):
         duration = f"{rx['duration_amount']} {rx['duration_unit']}"
         line = (f"{rx['medication']} — {rx['dosage']}, "
@@ -486,6 +486,7 @@ class ClinicApp(ctk.CTk):
         when = f"{dt.day} {dt.strftime('%b')} {dt.year}, {hour12}:{dt.minute:02d}{ampm}"
         return f"— {rx['prescriber_name']}, {rx['prescriber_role']} · {when}"
 
+    # Render the prescriptions section in the patient view window.
     def _render_prescriptions_section(self, parent, win, patient_id, patient_name):
         for w in parent.winfo_children():
             w.destroy()
@@ -513,6 +514,7 @@ class ClinicApp(ctk.CTk):
                 rx_text.insert("end", "\n", "spacer")
         rx_text.config(state="disabled")
 
+    # Render the "New Prescription" form in the patient view window.
     def _render_new_prescription(self, win, patient_id, patient_name):
         for w in win._body.winfo_children():
             w.destroy()
@@ -591,9 +593,10 @@ class ClinicApp(ctk.CTk):
                      bg=FIELD, fg=FG, width=12).pack(side="left", padx=4)
         medication.focus_set()
 
+    # --- clinical: notes section ------------------------------------
 
+    # Render the notes section in the patient view window.
     def _render_notes_section(self, parent, win, patient_id, patient_name):
-        # clear whatever was in this parent
         for w in parent.winfo_children():
             w.destroy()
 
@@ -619,8 +622,6 @@ class ClinicApp(ctk.CTk):
                 notes_text.insert("end", self._format_signature(n) + "\n", "sig")
                 notes_text.insert("end", "\n", "spacer")
         notes_text.config(state="disabled")
-
-        # the New Note button belongs with the notes, so it goes here too
 
     def _render_patient_notes(self, win, patient_id, patient_name):
         for w in win._body.winfo_children():
