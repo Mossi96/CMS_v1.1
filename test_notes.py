@@ -56,4 +56,4 @@ def test_notes_isolated_per_patient():
 def test_created_at_is_iso_parseable():
     notes.add_note("102-168-248", "x", "nina", "Nurse")
     stamp = notes.get_notes("102-168-248")[0]["created_at"]
-    datetime.fromisoformat(stamp)   # raises if not valid ISO format
+    datetime.fromisoformat(stamp)  
