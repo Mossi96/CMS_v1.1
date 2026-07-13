@@ -14,6 +14,7 @@ import patients
 import prescriptions
 import customtkinter as ctk
 from datetime import datetime, date 
+
 # --- Constants ------------------------------------------------------
 STAFF_APPS = [
     {
@@ -24,7 +25,6 @@ STAFF_APPS = [
     },
 ]
 
-# --- Theme ----------------------------------------------------------
 BG = CARD = FIELD = FG = MUTED = ACCENT = DANGER = ERROR = None
 FONT = ("Segoe UI", 11)
 TITLE_FONT = ("Segoe UI Semibold", 18)
@@ -37,9 +37,9 @@ def _load_theme():
     DANGER, ERROR = t["danger"], t["error"]
 
 _load_theme()
-ctk.set_appearance_mode(theme.get()["mode"])  # light/dark/auto
+ctk.set_appearance_mode(theme.get()["mode"])
 
-# --- Main application class ----------------------------------------
+# --- Main application ----------------------------------------
 class ClinicApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -80,7 +80,7 @@ class ClinicApp(ctk.CTk):
         self.resizable(resizable, resizable)
         self._center_window(w, h)
  
-    # Darken a hex colour a little — used for button hover states.
+    # Darken a hex colour a little, this is used for button hover states.
     def _shade(self, hex_color, factor=0.85):
         hex_color = hex_color.lstrip("#")
         r, g, b = (int(hex_color[i:i+2], 16) for i in (0, 2, 4))
@@ -112,8 +112,6 @@ class ClinicApp(ctk.CTk):
             corner_radius=8, width=width * 9, height=34,
             font=FONT, cursor="hand2",
         )
-    
-    # --- form fields and radio buttons --------------------------------
     
     # Build a labeled entry field. Returns the entry widget.
     def _field(self, parent, label, show=None):
