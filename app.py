@@ -250,7 +250,7 @@ class ClinicApp(ctk.CTk):
         self._clear()
         self._configure_window(700, 600)
 
-        self._dashboard_bg = tk.PhotoImage(file="assets/clinic_app_bg_med_1.png")
+        self._dashboard_bg = tk.PhotoImage(file="assets/clinic_app_bg_med_5.png")
         bg_label = tk.Label(self.container, image=self._dashboard_bg, borderwidth=0)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
