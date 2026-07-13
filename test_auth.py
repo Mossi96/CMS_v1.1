@@ -84,8 +84,6 @@ def test_full_name_combines_parts():
 def test_full_name_missing_parts():
     record = {"password": "h", "role": "Nurse"}
     assert auth.full_name(record) == ""
-
-# --- patient IDs -----------------------------------------------------
  
  
 # --- authenticate ----------------------------------------------------

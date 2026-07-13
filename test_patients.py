@@ -22,8 +22,8 @@ def test_valid_medicare_accepts_spaced_format():
     assert patients.valid_medicare("2123 45670 1") is True
 
 def test_valid_medicare_rejects_wrong_length():
-    assert patients.valid_medicare("212345670") is False    # 9
-    assert patients.valid_medicare("21234567012") is False  # 11
+    assert patients.valid_medicare("212345670") is False    
+    assert patients.valid_medicare("21234567012") is False  
 
 def test_valid_medicare_rejects_non_numeric():
     assert patients.valid_medicare("212345670a") is False
@@ -42,7 +42,7 @@ def test_create_patient_stores_fields_correctly():
     record = list(patients.load_patients().values())[0]
     assert record["first_name"] == "Max"
     assert record["dob"] == "1985-03-14"
-    assert record["medicare"] == "2123456701"        # spaces stripped
+    assert record["medicare"] == "2123456701"        
     assert record["address"] == "12 Baker St"
 
 
@@ -54,7 +54,7 @@ def test_create_patient_rejects_bad_dob():
 
 def test_create_patient_rejects_bad_medicare():
     ok, _ = patients.create_patient("Max", "Smith", "1985-03-14",
-                                    "12 Baker St", "123")      # too short
+                                    "12 Baker St", "123")      
     assert ok is False
 
 
@@ -75,7 +75,7 @@ def test_create_patient_generates_unique_ids():
 def test_get_patient_returns_record():
     patients.create_patient("Max", "Smith", "1985-03-14",
                             "12 Baker St", "2123456701")
-    pid = patients.list_patients()[0][0]      # the id from the first tuple
+    pid = patients.list_patients()[0][0]      
     record = patients.get_patient(pid)
     assert record["first_name"] == "Max"
 
