@@ -9,7 +9,7 @@ import json
 import os
 import bcrypt
 import random
-import patients  # for generate_patient_id() and valid_dob()
+import patients
 
 
 # --- Constants ------------------------------------------------------
@@ -20,14 +20,6 @@ ADMIN_PASSWORD = "$2b$12$d4hQbmwxX2WF8TALii3XlOdvHGhWiynktCE4VxbmM4rEKmMQq68DG"
 
 VALID_ROLES = ["Nurse", "Medical Officer", "Dr"]
 DEFAULT_ROLE = "Nurse"
-
-# Role -> display colour, as hex strings this time (a window can't read
-# ANSI codes the way a terminal can). Same single-source-of-truth idea
-# as your colorama role_color, just aimed at a different output target.
-
-
-
-# Generate a unique patient ID in the format "123-456-789". It is random
 
 
 # --- Password helpers -----------------------------------------------
