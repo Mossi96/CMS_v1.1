@@ -272,7 +272,7 @@ class ClinicApp(ctk.CTk):
                 continue          # gated out — don't render it
             self._build_app_tile(frame, app)
 
-        # Log Out lives here now — the hub, not each app
+        # Log Out
         self._button(frame, "Log Out", self.logout, bg=FIELD, fg=FG,
                      width=16).pack(pady=(24, 28), padx=4)
 
