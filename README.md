@@ -64,5 +64,5 @@ Notes:
 Data is stored in local JSON files (users.json, patients.json, notes.json,
 prescriptions.json), they're created automatically.
 patients.json ships with 50 sample patients so there's something to search.
-This is a portfolio project. In production, credentials would come from
+This is a portfolio project. For a real client, credentials would come from
 environment variables and data would live in a real database.
