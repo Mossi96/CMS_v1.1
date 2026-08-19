@@ -34,10 +34,9 @@ Log in as admin to create staff accounts.
 What to try:
 
 As Admin you can create users, assign roles, delete users. Patients aren't users,
-so they don't appear here; this is staff only.
+so they don't appear here.
 
-
-As a Nurse / Medical Officer / Dr you land on the Staff Dashboard. From here you can open the Patients app.
+As a Nurse, Medical Officer or Dr you land on the Staff Dashboard. From here you can open the Patients app.
 
 Search patients by first name, last name, or patient ID (prefix search type
 "s" to see everyone whose name starts with S).
@@ -45,7 +44,6 @@ Select a patient and Open Patient to see their details and notes, you can also d
 New Patient to create a record (DOB must be YYYY-MM-DD, Medicare must be
 10 digits).
 New notes and Prescriptions are automatically signed with your name, role, and a timestamp.
-
 
 As a Dr specifically you can open a patient and you'll see an extra
 Prescriptions tab and a New Prescription button. Log in as a Nurse and
